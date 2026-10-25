@@ -84,6 +84,15 @@ test('extended match actions stay separate from shots and score correction never
   assert.throws(() => shot(m, { shotType: 'unknown' }), /種類/);
 });
 
+test('unmarked shots preserve explicit ball type and rebound without losing legacy shot kinds', () => {
+  const m = shot(match(), { shotType: 'unmarked', ballType: 'バウンド', rebound: true });
+  assert.equal(m.events[0].shotType, 'unmarked'); assert.equal(m.events[0].ballType, 'バウンド'); assert.equal(m.events[0].rebound, true);
+  for (const shotType of ['wing', 'backcourt', 'pivot', 'breakthrough', 'fast', 'other']) assert.doesNotThrow(() => shot(match(), { shotType }));
+  assert.throws(() => shot(match(), { ballType: 'x'.repeat(101) }), /ボール/);
+  assert.throws(() => shot(match(), { ballType: {} }), /ボール/);
+  assert.throws(() => shot(match(), { rebound: 'yes' }), /リバウンド/);
+});
+
 test('7m and ordinary goalkeeper rates exclude post, block and miss', () => {
   let m = match();
   for (const [sevenMeter, result] of [[true, 'saved'], [true, 'goal'], [false, 'saved'], [false, 'saved'], [false, 'goal'], [true, 'post'], [false, 'miss'], [false, 'blocked']]) m = shot(m, { teamId: 'b', goalkeeperId: 'g1', sevenMeter, result });

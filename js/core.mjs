@@ -46,7 +46,9 @@ function validateEvent(event) {
   if (event.sevenMeter != null) check(typeof event.sevenMeter === 'boolean', '7m指定が不正です');
   if (event.deleted != null) check(typeof event.deleted === 'boolean', '削除状態が不正です');
   if (event.emptyNet != null) check(typeof event.emptyNet === 'boolean', 'エンプティー指定が不正です');
-  if (event.shotType != null && event.shotType !== '') check(['wing', 'backcourt', 'pivot', 'breakthrough', 'fast', 'other'].includes(event.shotType), 'シュート種類が不正です');
+  if (event.rebound != null) check(typeof event.rebound === 'boolean', 'リバウンド指定が不正です');
+  if (event.ballType != null) string(event.ballType, 'ボールの種類', 100);
+  if (event.shotType != null && event.shotType !== '') check(['wing', 'backcourt', 'pivot', 'breakthrough', 'unmarked', 'fast', 'other'].includes(event.shotType), 'シュート種類が不正です');
   for (const key of ['playerId', 'goalkeeperId', 'outPlayerId', 'defense', 'pattern', 'tacticId', 'subtype', 'missType', 'missLocation', 'createdAt']) optionalString(event, key, 200);
   if (event.type === 'score_adjustment') check(Number.isInteger(event.delta), 'スコア補正は整数です');
 }

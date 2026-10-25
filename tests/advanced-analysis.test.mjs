@@ -37,3 +37,5 @@ test('group unions deduplicate ids and tournament assignment is immutable and se
   assert.deepEqual(combinePlayerIds([{id:'g1',playerIds:['p1','p2']},{id:'g2',playerIds:['p2','p3']}],['g1','g2']),['p1','p2','p3']);
   const m=fixture(),copy=structuredClone(m),changed=setTournamentForMatches(m,['m1'],' new cup ');assert.equal(changed[0].tournament,'new cup');assert.strictEqual(changed[1],m[1]);assert.deepEqual(m,copy);assert.equal(setTournamentForMatches(m,['m1'],'')[0].tournament,'');assert.throws(()=>setTournamentForMatches(m,['m1'],'x'.repeat(101)));
 });
+
+test('unmarked filter computes the observed nomark shot rate without altering other types',()=>{const matches=fixture();matches[0].events.push(event('u1','a','shot',{result:'goal',shotType:'unmarked',ballType:'バウンド',rebound:true}),event('u2','a','shot',{result:'saved',shotType:'unmarked',ballType:'通常',rebound:false}));const result=summarizeAdvanced(matches,'a',{matchIds:['m1'],shotType:'unmarked'});assert.equal(result.shots,2);assert.equal(result.goals,1);assert.equal(result.shotRate,50);assert.equal(summarizeAdvanced(matches,'a',{matchIds:['m1'],shotType:'wing'}).shotRate,100);});

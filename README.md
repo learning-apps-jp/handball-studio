@@ -1,6 +1,6 @@
 # Handball Studio
 
-iPad優先の個人用ハンドボール記録・分析アプリ。SO-Q Statsの公式ガイド・95問FAQ・架空サンプル画面を調査し、独自のデザインとコードで開発した。2026-10-25時点の開発版。全機能同等・実機検証完了とは扱わない。
+iPad優先の個人用ハンドボール記録・分析アプリ。SO-Q Statsの公式ガイド・95問FAQ・架空サンプル画面を調査し、独自のデザインとコードで開発した。2026-10-26時点の開発版。全機能同等・実機検証完了とは扱わない。
 
 ## iPadで開く
 
@@ -17,6 +17,7 @@ Safariで開き「共有 → ホーム画面に追加」。試合データは端
 ## 実装
 
 - IndexedDBへの保存、PWAとオフライン起動（HTTPSまたはlocalhost）、全データバックアップ・検証付き復元
+- 標準の順番入力：結果→任意詳細・9コース→コート位置、戻る・取消・位置省略、GK7m結果選択、記録中の時刻固定
 - 両チーム並列／自チーム記録、時計、選手・GK、7m、シュート位置・コース、各種プレー、公式記録表示、訂正履歴
 - 単試合・複数試合・大会・選手・GK・戦術分析、不完全データの率非表示、別名合算
 - 前後半動画、複数同期点、時刻メモ・タグ・返信・いいね、場面連続再生、作戦添付
@@ -28,15 +29,18 @@ Safariで開き「共有 → ホーム画面に追加」。試合データは端
 
 `node --test js/*.test.mjs tests/*.test.mjs`
 
-ブラウザ試験は `tests/browser.cjs`、`tests/record-browser.cjs`、`tests/video-browser.cjs`（4173）、`tests/sync-browser.cjs`（4174）。このPCのbundled PlaywrightとEdgeを使用する。動画テストのYouTubeはモック、ローカル動画は実WebM。テストは架空データを使い、既存のユーザープロファイルへ接続しない。
+開発PC内のブラウザ試験は `tests/browser.cjs`、`tests/record-browser.cjs`、`tests/video-browser.cjs`（4173）、`tests/sync-browser.cjs`（4174）。開発PCのPlaywrightとEdgeを使用する。ブラウザ試験スクリプトはローカルパスを含むため公開リポジトリには含めない。動画テストのYouTubeはモック、ローカル動画は実WebM。テストは架空データを使い、既存のユーザープロファイルへ接続しない。
 
-配信用ファイル生成：`node build.mjs`。`dist/`のみが静的配信対象。同期サーバーは静的ホスティングでは動かない。
+手動配布用ファイル生成：`node build.mjs` で `dist/` へ書き出す。現在のGitHub Pagesは専用リポジトリのmainブランチのルートを配信しており、このdist出力とは別の運用。リポジトリ内の公開ソース・テストも取得可能だが、端末データ・Dashboard・同期サーバー保存データは含めない。同期サーバーは静的ホスティングでは動かない。
 
 ## ドキュメント
 
+- [SO-Q Statsとの比較](docs/soq-comparison.md)
 - [公式機能調査](docs/official-feature-audit.md)
 - [実装・検証・残課題](docs/implementation-status.md)
 - [iPadでの利用](docs/ipad-guide.md)
 - [同期サーバー](docs/sync-server.md)
 
-試合・名簿は通常端末内に保存され、共有を開始した対象だけ指定サーバーへ送信する。外部AI・アクセス解析・広告なし。動画を指定したときだけYouTube等へ通信する。共有コードを知る人は編集も可能。公開ホスティング先・HTTPS・iPad Safariの実機検証は未完了。
+試合・名簿は通常端末内に保存され、共有を開始した対象だけ指定サーバーへ送信する。外部AI・アクセス解析・広告なし。動画を指定したときだけYouTube等へ通信する。共有コードを知る人は編集も可能。公開先のHTTPS配信は完了。iPad Safari実機・実YouTube・公開同期サーバーの検証は未完了。
+
+

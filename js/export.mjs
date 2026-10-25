@@ -43,9 +43,9 @@ export function shareSnapshot(state, {matchId,playerId,teamId}={}) {
   const chosen=matchId ? matches.filter(m=>m.id===matchId) : playerId ? matches.filter(m=>m.events.some(e=>!e.deleted&&(e.playerId===playerId||e.goalkeeperId===playerId))) : matches.slice(0,1);
   if (!chosen.length) throw new Error('共有する試合がありません');
   const projected=chosen.map(m=> {
-    const metadata=pick(m,['id','name','opponent','date','tournament','homeTeamId','awayTeamId','periodMinutes','coverage']);
+    const metadata=pick(m,['id','name','opponent','date','tournament','homeTeamId','awayTeamId','periodMinutes','coverage','finished']);
     const events=(m.events||[]).filter(e=>!e.deleted&&(!playerId||e.playerId===playerId||e.goalkeeperId===playerId)).map(e=> {
-      const item=pick(e,['id','period','clockMs','teamId','playerId','goalkeeperId','type','result','sevenMeter','zone','position','shotType','phase','emptyNet','missLocation','missType','subtype','defense','pattern']);
+      const item=pick(e,['id','period','clockMs','teamId','playerId','goalkeeperId','type','result','sevenMeter','zone','position','shotType','ballType','rebound','phase','emptyNet','missLocation','missType','subtype','defense','pattern','delta']);
       if(playerId) { if(item.playerId!==playerId)delete item.playerId; if(item.goalkeeperId!==playerId)delete item.goalkeeperId; }
       return item;
     });

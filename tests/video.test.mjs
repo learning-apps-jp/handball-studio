@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseYouTubeId, mapClockToVideo, mapVideoToClock, clipRange, matchesTags, attachableTactic, allowedText,fetchYouTubeMetadata,gestureAction } from '../js/video.mjs';
+import { parseYouTubeId, mapClockToVideo, mapVideoToClock, clipRange, matchesTags, attachableTactic, allowedText,fetchYouTubeMetadata,gestureAction,memoTimestamp,floatingMemoBottom } from '../js/video.mjs';
 import { defaultFrame } from '../js/tactics.mjs';
 
 test('YouTube parser accepts supported URLs and rejects hostile src values', () => {
@@ -52,4 +52,16 @@ test('gesture actions distinguish normal and clip seeks, swipes and long presses
   assert.deepEqual(gestureAction({ratio:.1,doubleTap:true}),{type:'seek',seconds:-10});assert.deepEqual(gestureAction({ratio:.9,doubleTap:true,clipMode:true}),{type:'seek',seconds:5});
   assert.deepEqual(gestureAction({dy:-80,dx:5,clipMode:true}),{type:'next'});assert.deepEqual(gestureAction({dy:90,clipMode:true}),{type:'previous'});assert.deepEqual(gestureAction({dy:90}),{type:'none'});
   assert.deepEqual(gestureAction({durationMs:600,ratio:.1}),{type:'hold-seek',seconds:-2});assert.deepEqual(gestureAction({durationMs:600,ratio:.5}),{type:'speed',rate:2});assert.deepEqual(gestureAction(),{type:'toggle'});
+});
+test('floating memo captures synchronized video time and falls back to the match clock explicitly',()=>{
+  const anchors=[{period:1,clockMs:600000,videoSeconds:100}];
+  assert.deepEqual(memoTimestamp({anchors,period:1,videoSeconds:112.5,matchClockMs:0}),{videoSeconds:112.5,clockMs:612500,synchronized:true});
+  assert.deepEqual(memoTimestamp({anchors,period:2,videoSeconds:12,matchClockMs:45000}),{videoSeconds:12,clockMs:45000,synchronized:false});
+  assert.deepEqual(memoTimestamp({anchors,period:1,videoSeconds:null,matchClockMs:6000}),{videoSeconds:null,clockMs:6000,synchronized:false});
+});
+test('floating memo clears virtual keyboard and mobile navigation space without negative offsets',()=>{
+  assert.equal(floatingMemoBottom({innerHeight:1024,viewportHeight:700,offsetTop:0}),346);
+  assert.equal(floatingMemoBottom({innerHeight:1024,viewportHeight:700,offsetTop:20,mobile:true}),396);
+  assert.equal(floatingMemoBottom({innerHeight:700,viewportHeight:1024}),22);
+  assert.equal(floatingMemoBottom({mobile:true}),92);
 });

@@ -1,4 +1,4 @@
-import { uid, activeEvents, formatClock } from './core.mjs';
+import { uid, activeEvents, formatClock,clockMs } from './core.mjs';
 import { durationOf, timelineFrame, validateTactic } from './tactics.mjs';
 
 export function parseYouTubeId(input) {
@@ -36,6 +36,17 @@ export function gestureAction({dx=0,dy=0,durationMs=0,ratio=.5,clipMode=false,do
   if(durationMs>=450)return side==='center'?{type:'speed',rate:2}:{type:'hold-seek',seconds:side==='left'?-2:2};
   if(doubleTap&&side!=='center')return {type:'seek',seconds:(side==='left'?-1:1)*(clipMode?5:10)};
   return {type:'toggle'};
+}
+
+export function memoTimestamp({anchors=[],period=1,videoSeconds=null,matchClockMs=0}={}) {
+  const at=Number.isFinite(videoSeconds)&&videoSeconds>=0?videoSeconds:null;
+  const mapped=at==null?null:mapVideoToClock(anchors,period,at);
+  return {videoSeconds:at,clockMs:mapped??(Number.isFinite(matchClockMs)?Math.max(0,matchClockMs):0),synchronized:mapped!=null};
+}
+
+export function floatingMemoBottom({innerHeight,viewportHeight,offsetTop=0,mobile=false}={}) {
+  const keyboard=Number.isFinite(innerHeight)&&Number.isFinite(viewportHeight)?Math.max(0,innerHeight-viewportHeight-(Number.isFinite(offsetTop)?offsetTop:0)):0;
+  return (mobile?92:22)+keyboard;
 }
 
 function validAnchors(anchors, period) {
@@ -197,6 +208,20 @@ export function mountVideo(container, { state, match, save: saveState, toast = (
   commentClock.input.addEventListener('input', () => { annotationClock = null; });
   const blocked = () => state.preferences.blockedWords ?? [];
   function pauseForInput() { if (playing()) resumeAfterInput = true; pause(); }
+  const floatingMemo=button('＋ 動画メモを追加',()=>{
+    if(editing)resetForm();
+    const timestamp=memoTimestamp({anchors:data.anchors,period,videoSeconds:hasVideo()?currentTime():null,matchClockMs:clockMs(match)});
+    annotationClock=timestamp.clockMs;seconds.input.value=timestamp.videoSeconds??'';commentClock.input.value=formatClock(timestamp.clockMs);pauseForInput();
+    comments.scrollIntoView({behavior:'smooth',block:'start'});
+    try{text.input.focus({preventScroll:true});}catch{text.input.focus();}
+    if(timestamp.videoSeconds!=null&&!timestamp.synchronized)toast('動画位置をメモに入れました。同期点がないため試合時計は記録時計を使います。');
+  });
+  floatingMemo.classList.add('video-floating-memo');floatingMemo.setAttribute('aria-label','現在の動画位置でメモを追加');floatingMemo.style.cssText='position:fixed;right:22px;z-index:90;min-height:48px;padding:13px 20px;background:#123d39;color:white;border:1px solid #90bda4;border-radius:28px;box-shadow:0 6px 24px #183d3940;font-weight:700;max-width:calc(100vw - 32px)';
+  let keyboardTimer=null;
+  const viewport=globalThis.visualViewport;
+  function placeFloatingMemo(){if(compact||destroyed)return;const mobile=globalThis.matchMedia?.('(max-width:600px)').matches??innerWidth<=600;const bottom=floatingMemoBottom({innerHeight,viewportHeight:viewport?.height??innerHeight,offsetTop:viewport?.offsetTop??0,mobile});floatingMemo.style.bottom=`calc(${bottom}px + env(safe-area-inset-bottom, 0px))`;const right=Math.max(18,innerWidth-((viewport?.width??innerWidth)+(viewport?.offsetLeft??0))+18);floatingMemo.style.right=`${right}px`;}
+  function onKeyboardResize(){placeFloatingMemo();clearTimeout(keyboardTimer);keyboardTimer=setTimeout(()=>{if(!destroyed&&document.activeElement===text.input)text.input.scrollIntoView({behavior:'smooth',block:'center'});},100);}
+  if(!compact){root.append(floatingMemo);placeFloatingMemo();viewport?.addEventListener('resize',onKeyboardResize);viewport?.addEventListener('scroll',placeFloatingMemo);globalThis.addEventListener('resize',placeFloatingMemo);}
   for (const input of [text.input, tags.input, author.input, seconds.input, commentClock.input]) input.addEventListener('focus', pauseForInput);
   const start = field('範囲開始秒（省略可）', 'number'), end = field('範囲終了秒（省略可）', 'number'); start.input.min = end.input.min = '0';
   const tactic = el('select'); tactic.setAttribute('aria-label', '関連する作戦'); const blank = el('option', '作戦との関連なし'); blank.value = ''; tactic.append(blank);
@@ -258,7 +283,7 @@ export function mountVideo(container, { state, match, save: saveState, toast = (
     function tick(now) { if (!box.isConnected || destroyed) return; const frame = timelineFrame(tactic.frames, total ? (now - start) % total : 0); svg.replaceChildren(); for (const piece of [...frame.players, { ...frame.ball, id: 'ball' }]) { const circle = document.createElementNS(svg.namespaceURI, 'circle'); circle.setAttribute('cx', piece.x * 1000); circle.setAttribute('cy', piece.y * 750); circle.setAttribute('r', piece.id === 'ball' ? 12 : 25); circle.setAttribute('fill', piece.id === 'ball' ? '#ffd747' : piece.team === 'home' ? '#087f8c' : '#e78a48'); svg.append(circle); if (piece.number != null) { const number = document.createElementNS(svg.namespaceURI, 'text'); number.setAttribute('x', piece.x * 1000); number.setAttribute('y', piece.y * 750 + 8); number.setAttribute('text-anchor', 'middle'); number.setAttribute('fill', '#fff'); number.textContent = piece.number; svg.append(number); } } tacticRaf = requestAnimationFrame(tick); } tacticRaf = requestAnimationFrame(tick);
   }
   load(); renderAnchors(); renderEvents(); renderComments();
-  const cleanup = () => { destroyed = true; generation++; stopSequence();stopHold();clearTimeout(tapTimer);metadataController?.abort(); cancelAnimationFrame(tacticRaf); player?.destroy?.(); localVideo?.pause(); for (const url of localFiles.values()) URL.revokeObjectURL(url); };
+  const cleanup = () => { destroyed = true; generation++; stopSequence();stopHold();clearTimeout(tapTimer);clearTimeout(keyboardTimer);viewport?.removeEventListener('resize',onKeyboardResize);viewport?.removeEventListener('scroll',placeFloatingMemo);globalThis.removeEventListener('resize',placeFloatingMemo);floatingMemo.remove();metadataController?.abort(); cancelAnimationFrame(tacticRaf); player?.destroy?.(); localVideo?.pause(); for (const url of localFiles.values()) URL.revokeObjectURL(url); };
   cleanup.getClock=()=>({period,clockMs:!destroyed&&(localVideo||player?.seekTo)?mapVideoToClock(data.anchors,period,currentTime()):null});
   cleanup.getPlaybackState=()=>({playing:!destroyed&&playing(),videoSeconds:currentTime(),period});
   cleanup.resume=()=>{if(!destroyed)resume();};cleanup.pause=()=>{if(!destroyed)pause();};

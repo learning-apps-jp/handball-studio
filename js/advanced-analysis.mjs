@@ -1,6 +1,6 @@
 import {activeEvents,uid} from './core.mjs';
 
-const shotTypes={wing:'サイド',backcourt:'バックコート',pivot:'ポスト',breakthrough:'カットイン',fast:'速攻',other:'その他'};
+const shotTypes={wing:'サイド',backcourt:'ミドル',pivot:'ポスト',breakthrough:'カットイン',unmarked:'ノーマーク',fast:'速攻',other:'その他'};
 const percent=(a,b,complete=true)=>complete&&b>0?a/b*100:null;
 const rate=value=>value==null?'—':`${value.toFixed(1)}%`;
 

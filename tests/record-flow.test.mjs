@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createRecordFlowDraft,answerRecordFlow,prepareRecordFlowEvent,missDirectionAnswer,isRecordPositionTap} from '../js/record-flow.mjs';
+
+const event=()=>({id:'event-fixed',matchId:'match',teamId:'home',playerId:'p7',goalkeeperId:'away-gk',period:2,clockMs:800000,type:'shot',result:'goal',sevenMeter:false,phase:'set',zone:9,position:{x:.9,y:.9},shotType:'wing',ballType:'old',emptyNet:true,rebound:true});
+
+test('a new flow clears previous optional answers while freezing the original event identity and clock',()=>{
+  const original=event(),copy=structuredClone(original),draft=createRecordFlowDraft(original);assert.deepEqual(original,copy);assert.equal(draft.event.phase,null);assert.equal(draft.event.zone,null);assert.equal(draft.event.position,null);assert.equal(draft.event.shotType,null);assert.equal(draft.event.ballType,'');assert.equal(draft.event.emptyNet,false);assert.equal(draft.event.rebound,false);
+  const updated=answerRecordFlow(draft,{phase:'fast',shotType:'unmarked',ballType:'spin',zone:4,rebound:true});assert.equal(updated.event.clockMs,800000);assert.equal(updated.event.period,2);assert.equal(updated.event.id,'event-fixed');assert.equal(updated.event.playerId,'p7');assert.equal(draft.event.phase,null);assert.throws(()=>answerRecordFlow(draft,{clockMs:0}));assert.throws(()=>answerRecordFlow(draft,{id:'new'}));
+});
+test('a failure must have a result before commit and all miss locations map to one shot event',()=>{
+  const draft=createRecordFlowDraft({...event(),result:null});assert.throws(()=>prepareRecordFlowEvent(draft),/結果/);
+  for(const direction of ['left','high','right','left_post','bar','right_post']){const answered=answerRecordFlow(draft,missDirectionAnswer(direction));const result=prepareRecordFlowEvent(answered,{withoutPosition:true});assert.equal(result.type,'shot');assert.equal(result.id,'event-fixed');assert.equal(result.result,['left_post','bar','right_post'].includes(direction)?'post':'miss');assert.equal(result.missLocation,direction);assert.equal(result.zone,null);assert.equal(result.position,null);}
+});
+test('optional details never advance or mutate the source and seven meter is preserved',()=>{
+  const draft=createRecordFlowDraft({...event(),sevenMeter:true,result:'saved'});const selected=answerRecordFlow(draft,{phase:'quick',emptyNet:true,rebound:true,ballType:'オリジナル球種',position:{x:.3,y:.4},zone:2});assert.equal(selected.step,1);const prepared=prepareRecordFlowEvent(selected);assert.equal(prepared.sevenMeter,true);assert.equal(prepared.goalkeeperId,null);assert.equal(prepared.rebound,true);assert.equal(selected.event.goalkeeperId,'away-gk');assert.deepEqual(prepared.position,{x:.3,y:.4});const fast=prepareRecordFlowEvent(selected,{withoutCourse:true,withoutPosition:true});assert.equal(fast.zone,null);assert.equal(fast.position,null);assert.equal(fast.phase,'quick');
+});
+test('invalid option values and updates during commit are rejected',()=>{
+  const draft=createRecordFlowDraft(event());for(const patch of [{phase:'invalid'},{shotType:'invalid'},{ballType:'x'.repeat(101)},{zone:10},{position:{x:-.1,y:.3}},{emptyNet:'yes'},{missLocation:'unknown'}])assert.throws(()=>answerRecordFlow(draft,patch));assert.throws(()=>answerRecordFlow({...draft,status:'committing'},{zone:1}));assert.throws(()=>prepareRecordFlowEvent({...draft,status:'cancelled'}));
+});
+test('court commits require a matching pointer and no more than ten pixels of movement',()=>{
+  const start={pointerId:1,x:100,y:100};assert.equal(isRecordPositionTap(start,{pointerId:1,x:106,y:108}),true);assert.equal(isRecordPositionTap(start,{pointerId:1,x:111,y:100}),false);assert.equal(isRecordPositionTap(start,{pointerId:2,x:100,y:100}),false);assert.equal(isRecordPositionTap(null,start),false);
+});
