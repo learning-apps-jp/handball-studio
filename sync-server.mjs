@@ -7,7 +7,7 @@ const ROOT=path.dirname(fileURLToPath(import.meta.url));
 const TTL=180*86400000, MAX=5*1024*1024;
 const ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.webmanifest':'application/manifest+json','.svg':'image/svg+xml','.png':'image/png'};
-const PUBLIC=new Set(['index.html','styles.css','icon.svg','icon-180.png','icon-192.png','icon-512.png','manifest.webmanifest','sw.js','js/app.mjs','js/core.mjs','js/storage.mjs','js/tactics.mjs','js/video.mjs','js/export.mjs','js/sync.mjs','js/advanced-analysis.mjs','js/dashboard.mjs','js/readiness.mjs','js/personal-report.mjs','js/record-flow.mjs','docs/official-feature-audit.md','docs/implementation-status.md','docs/ipad-guide.md','docs/soq-comparison.md']);
+const PUBLIC=new Set(['index.html','styles.css','icon.svg','icon-180.png','icon-192.png','icon-512.png','manifest.webmanifest','sw.js','js/app.mjs','js/core.mjs','js/storage.mjs','js/tactics.mjs','js/video.mjs','js/export.mjs','js/sync.mjs','js/advanced-analysis.mjs','js/dashboard.mjs','js/readiness.mjs','js/personal-report.mjs','js/record-flow.mjs','js/event-details.mjs','docs/official-feature-audit.md','docs/implementation-status.md','docs/ipad-guide.md','docs/soq-comparison.md']);
 function error(status,message){return Object.assign(new Error(message),{status});}
 export async function createSyncServer({dataDir=path.join(ROOT,'.local-data'),now=()=>Date.now(),rateLimit=120}={}) {
   await fs.mkdir(dataDir,{recursive:true});const filename=path.join(dataDir,'rooms.json');let rooms={};

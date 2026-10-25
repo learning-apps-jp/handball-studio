@@ -1,4 +1,5 @@
 import {activeEvents,uid} from './core.mjs';
+import {eventDetailLabel} from './event-details.mjs';
 
 const shotTypes={wing:'サイド',backcourt:'ミドル',pivot:'ポスト',breakthrough:'カットイン',unmarked:'ノーマーク',fast:'速攻',other:'その他'};
 const percent=(a,b,complete=true)=>complete&&b>0?a/b*100:null;
@@ -37,7 +38,7 @@ export function summarizeAdvanced(matches,teamId,filters={}) {
   const own=filtered.own.map(r=>r.event),against=filtered.opponent.map(r=>r.event);
   const shots=own.filter(e=>e.type==='shot'),goals=shots.filter(e=>e.result==='goal').length,turnovers=own.filter(e=>e.type==='turnover');
   const gkShots=against.filter(e=>e.type==='shot'&&!e.emptyNet),saves=gkShots.filter(e=>e.result==='saved').length,conceded=gkShots.filter(e=>e.result==='goal').length;
-  const missTypes=new Map();for(const e of turnovers){const name=e.missType||e.subtype||'未指定';missTypes.set(name,(missTypes.get(name)||0)+1);}
+  const missTypes=new Map();for(const e of turnovers){const name=eventDetailLabel(e)||'未指定';missTypes.set(name,(missTypes.get(name)||0)+1);}
   const zones=[false,true].map(sevenMeter=>{
     const relevant=gkShots.filter(e=>Boolean(e.sevenMeter)===sevenMeter);
     const cells=Array.from({length:9},(_,i)=>{

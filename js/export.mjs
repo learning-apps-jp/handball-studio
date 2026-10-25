@@ -1,6 +1,12 @@
+import {eventDetailLabel} from './event-details.mjs';
 const UTF8 = new TextEncoder();
 const MAX_SHARE_BYTES = 100_000;
 export const SHARE_LIMIT_BYTES = MAX_SHARE_BYTES;
+/** Append localized event details without changing caller data or event order. */
+export function withEventDetailColumn(sheet, events) {
+  if (!sheet || !Array.isArray(sheet.rows) || !Array.isArray(events) || sheet.rows.length !== events.length + 1 || sheet.rows.some(row => !Array.isArray(row))) throw new Error('プレー記録と出力行が一致しません');
+  return { ...sheet, rows: sheet.rows.map((row, index) => [...row, index === 0 ? 'ミス種別' : eventDetailLabel(events[index - 1])]) };
+}
 function xml(value) { return String(value).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c])); }
 function column(index) { let s = ''; for (index++; index; index = Math.floor((index - 1) / 26)) s = String.fromCharCode(65 + (index - 1) % 26) + s; return s; }
 const CRC_TABLE = Array.from({length:256}, (_, n) => { for (let i=0;i<8;i++) n = n & 1 ? 0xedb88320 ^ (n >>> 1) : n >>> 1; return n >>> 0; });

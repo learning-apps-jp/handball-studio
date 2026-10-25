@@ -19,7 +19,7 @@ export function setReadinessCheck(value, id, checked, { source = 'manual' } = {}
 }
 
 // Mirrors the files required to launch the PWA. Cache checks never mark the manual list.
-export const OFFLINE_ASSETS = Object.freeze(['./', './index.html', './styles.css', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './manifest.webmanifest', './js/app.mjs', './js/core.mjs', './js/storage.mjs', './js/tactics.mjs', './js/video.mjs', './js/export.mjs', './js/sync.mjs', './js/advanced-analysis.mjs', './js/readiness.mjs', './js/dashboard.mjs', './js/personal-report.mjs','./js/record-flow.mjs']);
+export const OFFLINE_ASSETS = Object.freeze(['./', './index.html', './styles.css', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './manifest.webmanifest', './js/app.mjs', './js/core.mjs', './js/storage.mjs', './js/tactics.mjs', './js/video.mjs', './js/export.mjs', './js/sync.mjs', './js/advanced-analysis.mjs', './js/readiness.mjs', './js/dashboard.mjs', './js/personal-report.mjs','./js/record-flow.mjs','./js/event-details.mjs']);
 
 /** Inspect actual Service Worker and CacheStorage handles; does not infer from user-agent. */
 export async function inspectOfflineAssets({ navigatorObject = globalThis.navigator, cacheStorage = globalThis.caches, baseURL = globalThis.location?.href, timeoutMs = 3000 } = {}) {

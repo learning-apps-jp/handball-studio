@@ -21,3 +21,16 @@ test('invalid option values and updates during commit are rejected',()=>{
 test('court commits require a matching pointer and no more than ten pixels of movement',()=>{
   const start={pointerId:1,x:100,y:100};assert.equal(isRecordPositionTap(start,{pointerId:1,x:106,y:108}),true);assert.equal(isRecordPositionTap(start,{pointerId:1,x:111,y:100}),false);assert.equal(isRecordPositionTap(start,{pointerId:2,x:100,y:100}),false);assert.equal(isRecordPositionTap(null,start),false);
 });
+test('editing retains existing optional answers, independent coordinates and frozen identity',()=>{
+  const source={...event(),missLocation:'bar'},before=structuredClone(source),draft=createRecordFlowDraft(source,{editing:true});
+  for(const key of ['phase','shotType','ballType','zone','position','missLocation','emptyNet','rebound'])assert.deepEqual(draft.event[key],source[key]);
+  const changed=answerRecordFlow(draft,{position:{x:.2,y:.3}}),prepared=prepareRecordFlowEvent(changed);assert.equal(prepared.id,source.id);assert.equal(prepared.clockMs,source.clockMs);assert.equal(prepared.goalkeeperId,source.goalkeeperId);assert.deepEqual(prepared.position,{x:.2,y:.3});assert.deepEqual(source,before);assert.deepEqual(draft.event.position,source.position);
+});
+test('editing accepts both legacy shot types and preserves them through unrelated changes',()=>{
+  for(const type of ['fast','other']){const draft=createRecordFlowDraft({...event(),shotType:type,phase:''},{editing:true});const changed=answerRecordFlow(draft,{zone:4});assert.equal(prepareRecordFlowEvent(changed).shotType,type);assert.equal(changed.event.phase,'');}
+});
+test('editing only clears existing course and position when the explicit skip options request it',()=>{
+  const draft=createRecordFlowDraft({...event(),emptyNet:false},{editing:true}),same=prepareRecordFlowEvent(draft);assert.equal(same.zone,9);assert.deepEqual(same.position,{x:.9,y:.9});
+  const noPosition=prepareRecordFlowEvent(draft,{withoutPosition:true});assert.equal(noPosition.position,null);assert.equal(noPosition.zone,9);
+  const noCourse=prepareRecordFlowEvent(draft,{withoutCourse:true});assert.equal(noCourse.zone,null);assert.equal(noCourse.missLocation,null);assert.deepEqual(noCourse.position,{x:.9,y:.9});assert.equal(draft.event.zone,9);
+});
