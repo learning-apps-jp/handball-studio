@@ -1,0 +1,10 @@
+import {createState, validateState, clockMs} from './core.mjs';
+const DB='handball-studio-v1';
+let dbPromise;
+function database(){return dbPromise??=new Promise((resolve,reject)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore('state');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function readState(){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('state','readonly');const r=tx.objectStore('state').get('main');r.onsuccess=()=>{try{const s=r.result??createState();validateState(s);resolve(s);}catch(e){reject(e)}};r.onerror=()=>reject(r.error);});}
+export async function writeState(state){validateState(state);const snapshot=structuredClone(state);const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('state','readwrite');tx.objectStore('state').put(snapshot,'main');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error??new Error('保存が中断されました'));});}
+export function downloadFile(name,content,type='application/json'){const blob=content instanceof Blob?content:new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);return blob;}
+export function backupEnvelope(state){validateState(state);const now=Date.now(),data=structuredClone(state);for(const m of data.matches)m.clock={elapsed:clockMs(m,now),runningSince:null};return {application:'handball-studio',version:1,exportedAt:new Date(now).toISOString(),data};}
+export function parseBackup(text){const payload=JSON.parse(text);if(payload.application!=='handball-studio'||payload.version!==1)throw new Error('Handball Studioのバックアップではありません');validateState(payload.data);return payload.data;}
+export function csv(rows){return '\uFEFF'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"').join(',')).join('\r\n');}

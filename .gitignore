@@ -1,0 +1,7 @@
+.local-data/
+.openai/
+.work-dashboard/
+dist/
+node_modules/
+.env*
+*.zip

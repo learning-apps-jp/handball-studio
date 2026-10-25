@@ -1,0 +1,1 @@
+{"name":"handball-studio","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.mjs","start:sync":"node sync-server.mjs","test":"node --test js/*.test.mjs tests/*.test.mjs","check":"node --check js/app.mjs && node --check js/video.mjs && node --check js/storage.mjs && node --check server.mjs"}}
