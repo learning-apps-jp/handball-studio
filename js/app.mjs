@@ -101,7 +101,7 @@ async function commitRecord(mid,event,{message,clearTeam,displayTeamId=event.tea
   if(!already){let next=addEvent(latest,event);if(event.type==='timeout')next.clock={elapsed:clockMs(next),runningSince:null};replaceMatch(next);}
   try{await save();}catch(error){const current=state.matches.find(x=>x.id===mid);if(!already&&current)replaceMatch({...current,events:current.events.filter(x=>x.id!==event.id),...(event.type==='timeout'?{clock:wasRunning}:{})});throw error;}
   if(!undoStack.some(x=>x.eventId===event.id))undoStack.push({matchId:mid,eventId:event.id});
-  if(clearTeam){delete selection[clearTeam];$('[data-player]').filter(el=>el.dataset.tid===clearTeam).forEach(el=>{const selected=!el.dataset.player;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});}
+  if(clearTeam){delete selection[clearTeam];$$('[data-player]').filter(el=>el.dataset.tid===clearTeam).forEach(el=>{const selected=!el.dataset.player;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});}
   playFeedback(event.type==='shot'&&event.result==='goal'?'goal':['warning','suspension','disqualification'].includes(event.type)?'penalty':'record');toast(`${team(displayTeamId)?.name||''} · ${message||'プレー'}を記録しました`);
   if(videoDock)refreshRecord();else render();
 }
