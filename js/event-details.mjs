@@ -51,6 +51,7 @@ export function prepareRecordEdit(event, values) {
     if (patch.phase != null && !['set','fast','quick'].includes(patch.phase)) throw new Error('攻撃形態が不正です');
     if (patch.zone != null && (!Number.isInteger(patch.zone) || patch.zone < 1 || patch.zone > 9)) throw new Error('ゴールコースが不正です');
     for (const key of ['rebound','emptyNet','sevenMeter']) { if (patch[key] == null) patch[key] = false; if (typeof patch[key] !== 'boolean') throw new Error('シュートの指定が不正です'); }
+    if (patch.result === 'saved' && patch.emptyNet) throw new Error('セーブはエンプティーと同時に記録できません。GKまたはシュート結果を確認してください');
     if (patch.emptyNet) patch.goalkeeperId = null;
   } else for (const key of shotFields) patch[key] = null;
   if (type === 'turnover') { const selected = normalizeTurnoverType(Object.hasOwn(values, 'missType') ? values.missType : event.type === 'turnover' ? event.missType || event.subtype : ''); patch.missType = selected; patch.subtype = selected; }
