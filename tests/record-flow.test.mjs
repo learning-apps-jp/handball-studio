@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createRecordFlowDraft,answerRecordFlow,prepareRecordFlowEvent,missDirectionAnswer,isRecordPositionTap,changeRecordFlowParticipant} from '../js/record-flow.mjs';
+import {createRecordFlowDraft,answerRecordFlow,prepareRecordFlowEvent,missDirectionAnswer,isRecordPositionTap,changeRecordFlowParticipant,recordFlowResultChangePatch,recordFlowResultLabel,recordFlowCoursePrompt} from '../js/record-flow.mjs';
 
 const event=()=>({id:'event-fixed',matchId:'match',teamId:'home',playerId:'p7',goalkeeperId:'away-gk',period:2,clockMs:800000,type:'shot',result:'goal',sevenMeter:false,phase:'set',zone:9,position:{x:.9,y:.9},shotType:'wing',ballType:'old',emptyNet:true,rebound:true});
 
@@ -51,4 +51,13 @@ test('new saves reject empty goals while unknown goalkeeper and unrelated legacy
 test('editing cannot introduce a saved-empty contradiction and normalized legacy data cannot reintroduce it',()=>{
   const normal=createRecordFlowDraft({...event(),result:'saved',emptyNet:false},{editing:true});assert.equal(normal.initialSavedEmpty,false);assert.throws(()=>answerRecordFlow(normal,{emptyNet:true}),/エンプティー/);assert.throws(()=>prepareRecordFlowEvent({...normal,event:{...normal.event,emptyNet:true}}),/エンプティー/);
   const legacy=createRecordFlowDraft({...event(),result:'saved',emptyNet:true},{editing:true});assert.equal(legacy.initialSavedEmpty,true);assert.equal(prepareRecordFlowEvent(answerRecordFlow(legacy,{zone:3})).emptyNet,true);const cleared=answerRecordFlow(legacy,{emptyNet:false});assert.throws(()=>answerRecordFlow(cleared,{emptyNet:true}),/エンプティー/);
+});
+test('switching outcomes retains compatible course, participants and frozen time while clearing contradictions',()=>{
+  let draft=answerRecordFlow(createRecordFlowDraft({...event(),emptyNet:false}),{zone:3,position:{x:.4,y:.6},emptyNet:true,phase:'fast'});const original=structuredClone(draft);
+  draft=answerRecordFlow(draft,recordFlowResultChangePatch(draft,'saved'));assert.equal(draft.event.zone,3);assert.equal(draft.event.emptyNet,false);assert.equal(draft.event.playerId,'p7');assert.equal(draft.event.goalkeeperId,'away-gk');assert.equal(draft.event.clockMs,800000);assert.equal(draft.event.id,'event-fixed');assert.deepEqual(draft.event.position,{x:.4,y:.6});assert.equal(original.event.result,'goal');
+  draft=answerRecordFlow(draft,recordFlowResultChangePatch(draft,'miss'));assert.equal(draft.event.zone,null);assert.equal(draft.event.missLocation,null);draft=answerRecordFlow(draft,missDirectionAnswer('left'));draft=answerRecordFlow(draft,recordFlowResultChangePatch(draft,'goal'));assert.equal(draft.event.zone,null);assert.equal(draft.event.missLocation,null);assert.equal(draft.event.phase,'fast');
+});
+test('result heading and course question follow the current attacking or defending outcome',()=>{
+  assert.equal(recordFlowResultLabel('goal'),'ゴール');assert.equal(recordFlowResultLabel('saved'),'シュート失敗');assert.equal(recordFlowResultLabel('goal',{defensive:true}),'失点');assert.equal(recordFlowResultLabel('saved',{defensive:true}),'セーブ');assert.equal(recordFlowResultLabel(null,{fallback:'7m失敗'}),'7m失敗');
+  assert.equal(recordFlowCoursePrompt({coursePrompt:'static'},'goal',{dynamic:true}),'どこに決めましたか？');assert.equal(recordFlowCoursePrompt({coursePrompt:'static'},'saved',{dynamic:true}),'どこを止められましたか？');assert.equal(recordFlowCoursePrompt({defensive:true},'saved',{dynamic:true}),'どこを止めましたか？');assert.throws(()=>recordFlowResultChangePatch({...createRecordFlowDraft(event()),status:'committing'},'saved'));
 });

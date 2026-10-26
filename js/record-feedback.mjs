@@ -10,7 +10,7 @@ export function shotRecordFeedback(event,{attackingTeam,defendingTeam,shooter,go
     const detail=event.emptyNet?`${prefix}${attack}の${player}が得点。${defense}はGK不在（エンプティー）。個人GKの失点には計上しません。`:`${prefix}${attack}の${player}が得点。${defense}のGK ${keeper}側の失点として記録しました。`;
     return {title,detail,kind:defensive?'conceded':'goal'};
   }
-  if(event.result==='saved')return {title:`セーブ · GK ${keeper}${penalty}`,detail:`${prefix}${defense}のGK ${keeper}が、${attack}の${player}のシュートを止めました。得点は変わりません。`,kind:'save'};
+  if(event.result==='saved')return {title:defensive?`セーブ · GK ${keeper}${penalty}`:`シュート失敗（相手GKセーブ） · ${player}${penalty}`,detail:`${prefix}${defense}のGK ${keeper}が、${attack}の${player}のシュートを止めました。得点は変わりません。`,kind:defensive?'save':'miss'};
   const result=event.result==='post'?'ポスト・バー':event.result==='blocked'?'ブロック':'枠外';
   return {title:`${result} · ${player}${penalty}`,detail:`${prefix}${attack}の${player}のシュートは${result}。${defense}のGKセーブには計上しません。得点は変わりません。`,kind:'miss'};
 }
